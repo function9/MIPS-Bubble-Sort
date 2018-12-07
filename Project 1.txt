@@ -1,0 +1,79 @@
+#Voravee Upatising
+.data
+	#declaring the values needed
+	arrayA: .word 6,12,1,14,9,3,17,4,12,10
+	format: .asciiz ", "
+	open: .asciiz "{"
+	close: .asciiz "}"
+	begin: .asciiz "program start"
+	new: .asciiz "\n\0"
+	end: .asciiz "program end"
+.text
+
+.globl main
+
+main:
+
+	la 		$t1,arrayA
+	li      $t2, 0 #j
+	li      $t3, 0 #i
+	li      $s1, 9 #arraylength
+	li		$t4, 10	#print loop counter
+	li		$t5, 0	#print loop conditional
+	la		$s5, 0($t1) #intial marker of arrayA address
+	li		$v0, 4
+	la		$a0, begin	#print program start
+	syscall
+	la		$a0, new
+		syscall
+	j		print
+	loop:
+		bge	$t2, 10, print	#line that exits out of the loop into the print method
+		li		$t5, 1		#set the print loop conditional to one so the program properly terminates
+		move    $t3, $0		#reset inner loop counter
+		subu    $s2, $s1, $t2	#update outer loop counter
+		move	$t1, $s5	#reset arrayA pointer to beginning
+		sort:
+			bge     $t3, $s2, exitSort	#terminates inner loop after proper number of iterations
+			lw      $a0, 0($t1)			#load first word to be compared
+			lw		$a1, 4($t1)			#load second word to be compared
+			ble     $a0, $a1, skip		#goes to skip label if swap does not need to be made
+			sw		$a1, 0($t1)			#swap the two words if needed
+			sw		$a0, 4($t1)
+			skip:
+				addiu		$t3, $t3, 1	#increment inner loop counter
+				j			sort		#goes to next iteration
+		exitSort:
+			addiu   $t2, $t2, 1			#increment outer loop counter	
+			j loop						#goes to next iteration of outer loop
+		
+	print:
+		li		$v0, 4
+		la		$a0, open				#prints first bracket
+		syscall
+		li		$t4, 10					#resets loop counter
+		move	$t1, $s5				#resets arrayA pointer to the beginning
+		printloop:
+		beq		$t4, $0, printexit		#line that exits out of the loop after proper number of iterations
+		li		$v0, 1					
+		lw		$a0, 0($t1)				#prints desired element of arrayA
+		syscall
+		li		$v0, 4
+		la		$a0, format				#prints comma
+		syscall
+		addi $t1, $t1, 4				#increment pointer value to next word
+		sub $t4, $t4, 1					#decrements counter value
+		j printloop
+	printexit:
+		li		$v0, 4
+		la		$a0, close				#prints last bracket
+		syscall
+		la		$a0, new				#go to new line
+		syscall
+		beq		$t5, $0, loop			#if this is the first time printexit is run, sort the array, if this is the second time, exit the program
+		j	exit
+	exit:
+		la		$a0, end				#final program end message
+		syscall
+		li $v0, 10
+		syscall
